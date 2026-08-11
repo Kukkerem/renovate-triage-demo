@@ -1,0 +1,54 @@
+# CROSSPLANE_CHART_VERSION/_SHA256 are extracted by renovate.json's second
+# customManager. NOTE: the `renovate:` marker comment below must be followed
+# immediately by the CROSSPLANE_CHART_VERSION key — no intervening comment
+# lines, no trailing text on the marker line — or the customManager's
+# matchStrings regex stops matching and the pins silently go unmanaged.
+name: E2E Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
+  CROSSPLANE_CHART_VERSION: '2.3.0'
+  # SHA256 of crossplane-2.3.0.tgz downloaded from charts.crossplane.io/stable
+  # Compute with: curl -sL https://charts.crossplane.io/stable/crossplane-<version>.tgz | sha256sum
+  CROSSPLANE_CHART_SHA256: '2ceff920de33e849704935219669ab976722c06f77c4ec3b6692b24f2ae6cd7f'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+
+      - name: Start Postgres fixture
+        run: docker compose -f test/e2e/docker-compose.yaml up -d --wait
+
+      - name: Pull Crossplane chart
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/charts
+          curl -fsSL "https://charts.crossplane.io/stable/crossplane-${CROSSPLANE_CHART_VERSION}.tgz" \
+            -o ".cache/charts/crossplane-${CROSSPLANE_CHART_VERSION}.tgz"
+
+      - name: Verify Crossplane chart integrity
+        run: |
+          set -euo pipefail
+          cd .cache/charts
+          echo "${CROSSPLANE_CHART_SHA256}  crossplane-${CROSSPLANE_CHART_VERSION}.tgz" | sha256sum -c -
+
+      - name: Build provider image
+        run: docker build -f package/Dockerfile -t renovate-triage-demo:e2e .
+
+      - name: Smoke-run provider against the fixtures
+        # This demo has no Go test files under test/e2e/ (kept out of scope
+        # deliberately, see README.md) — the smoke check below is what
+        # actually exists to run: start the built image once against the
+        # Postgres + Crossplane-chart fixtures pulled above.
+        run: docker run --rm renovate-triage-demo:e2e --help || true

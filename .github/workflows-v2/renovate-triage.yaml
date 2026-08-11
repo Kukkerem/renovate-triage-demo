@@ -1,0 +1,81 @@
+# v2 SKETCH ONLY — not wired up or run live (PLAN.md P3). Companions:
+# wf-renovate-triage.md (the tool this promotes into CI), go-verify-SKILL.md.
+name: renovate-triage
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+# Renovate force-pushes ONE new commit on every rebase — kill a stale run
+# instead of racing it to a label.
+concurrency: { group: "renovate-triage-${{ github.event.pull_request.number }}", cancel-in-progress: true }
+permissions: {}  # default-deny; each job grants exactly what it needs below
+
+jobs:
+  analyze:
+    if: github.event.pull_request.user.login == 'renovate[bot]' && contains(github.event.pull_request.labels.*.name, 'needs-triage')
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }  # id-token mints an Anthropic OIDC token, not a GitHub write scope
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }   # this job can never push, even by accident
+      - env:
+          PR_BODY: ${{ github.event.pull_request.body }}   # Renovate's own release notes
+        run: |
+          mkdir -p triage
+          curl -sSfL "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}.diff" -o triage/diff.txt
+          printf '%s\n' "$PR_BODY" > triage/changelog.md
+      # Deterministic layer FIRST — the agent reports this evidence, never repeats it.
+      - uses: golang/govulncheck-action@v1
+        continue-on-error: true
+        with: { output-format: json, output-file: triage/govulncheck.json, repo-checkout: false }
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.5.0
+        continue-on-error: true
+        with: { scan-args: "--format=json\n--output=triage/osv.json\n./" }
+      - uses: actions/dependency-review-action@v4
+        continue-on-error: true
+      - id: schema
+        run: echo "json=$(jq -c . .github/renovate-triage/verdict.schema.json)" >> "$GITHUB_OUTPUT"
+      - name: Claude — exactly one verdict from the evidence above
+        id: triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          allowed_bots: "renovate[bot]"  # default "" = no bots = this silently never fires
+          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          # no static secret to leak; alternative: claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Read triage/diff.txt, changelog.md, and the govulncheck/osv
+            JSON in triage/. Pick one verdict per the schema — missing
+            evidence is needs-human, an unreachable govulncheck hit is not
+            a blocker. Also write triage/plan.md unless ready-to-merge.
+          claude_args: "--json-schema '${{ steps.schema.outputs.json }}'"
+      - env:
+          VERDICT_JSON: ${{ steps.triage.outputs.structured_output }}   # model output — still untrusted, hence env: not inline
+        run: printf '%s' "$VERDICT_JSON" > triage/verdict.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verdict-${{ github.event.pull_request.number }}
+          path: |
+            triage/verdict.json
+            triage/plan.md
+
+  publish:
+    needs: analyze
+    runs-on: ubuntu-latest
+    permissions: { pull-requests: write, issues: write }  # label + comment; PR comments are the issues API under the hood
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: "verdict-${{ github.event.pull_request.number }}", path: triage }
+      # Invalid or out-of-enum JSON FAILS this job (red X) — never silence.
+      - run: npx --yes ajv-cli validate -s .github/renovate-triage/verdict.schema.json -d triage/verdict.json --strict=false
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          VERDICT=$(jq -r .verdict triage/verdict.json)
+          gh pr edit "$PR" --remove-label needs-triage --add-label "$VERDICT"
+          if [ "$VERDICT" = needs-human ]; then gh pr edit "$PR" --add-label do-not-merge; fi  # label-merge-blocker.yaml already fails the required check
+          { echo '<!-- renovate-triage -->'; echo "verdict: $VERDICT"; echo; jq -r .summary triage/verdict.json; } > body.md
+          ID=$(gh pr view "$PR" --json comments -q '.comments[]|select(.body|startswith("<!-- renovate-triage -->"))|.id' | head -n1)
+          if [ -n "$ID" ]; then gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$ID" -F body=@body.md; else gh pr comment "$PR" --body-file body.md; fi
+# Invariant: analyze never holds a GitHub write scope; nothing ever pushes to
+# Renovate's branch — one foreign commit there makes Renovate abandon it for good.

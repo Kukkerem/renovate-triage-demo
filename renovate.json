@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "ignorePresets": ["group:goOpenapi"],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "labels": ["needs-triage"],
+  "prConcurrentLimit": 20,
+  "prHourlyLimit": 0,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Makefile$/",
+        "/(^|/)Dockerfile$/"
+      ],
+      "matchStrings": [
+        "(export|ARG|--build-arg=) *TERRAFORM_PROVIDER_VERSION *[:|\\?]?= *(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "terraform-provider",
+      "versioningTemplate": "hashicorp",
+      "depNameTemplate": "SAP/btp"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/e2e\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=helm depName=crossplane registryUrl=https://charts\\.crossplane\\.io/stable\\s*\\n\\s*CROSSPLANE_CHART_VERSION:\\s*['\"]?(?<currentValue>[^'\"\\s]+)['\"]?(?:\\s*\\n[^\\n]*)*?\\s*\\n\\s*CROSSPLANE_CHART_SHA256:\\s*['\"]?(?<currentDigest>[a-f0-9]{64})['\"]?"
+      ],
+      "datasourceTemplate": "helm",
+      "depNameTemplate": "crossplane",
+      "registryUrlTemplate": "https://charts.crossplane.io/stable"
+    }
+  ]
+}

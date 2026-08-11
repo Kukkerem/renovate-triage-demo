@@ -1,0 +1,25 @@
+# Local fixture for e2e tests: a Postgres instance backing the provider's
+# sync-state cache (internal/config.ProviderConfig.LastSynced, persisted here
+# instead of only in memory once the e2e suite grows beyond this demo).
+#
+# The named volume below persists across runs so the suite can assert on
+# state written by an earlier test.
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: provider
+      POSTGRES_PASSWORD: provider
+      POSTGRES_DB: renovate_triage_demo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U provider -d renovate_triage_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata: {}

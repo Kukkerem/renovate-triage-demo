@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/renovate-triage/verdict.schema.json",
+  "title": "Renovate triage verdict",
+  "description": "Structured output contract for the analyze job in tooling/renovate-triage.yaml. The publish job fails the check if an instance does not validate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "summary",
+    "evidence"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "description": "Exactly one of the four triage verdicts. Closed enum: no other value is ever valid.",
+      "enum": [
+        "ready-to-merge",
+        "config-change-needed",
+        "migration-needed",
+        "needs-human"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "description": "3-8 lines explaining the verdict, for the PR comment body.",
+      "minLength": 1,
+      "maxLength": 800
+    },
+    "evidence": {
+      "type": "array",
+      "description": "One URL per claim in summary: changelog, release, advisory, or govulncheck report.",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      },
+      "minItems": 1
+    }
+  }
+}

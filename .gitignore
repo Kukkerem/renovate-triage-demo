@@ -1,0 +1,14 @@
+# Triage artifacts written by /wf-renovate-triage (analysis.md, plan.md,
+# processed.txt). Local and disposable — see .omp/skills/renovate-queue.
+# Must stay ignored: the live demo runs the triage command inside this
+# checkout, and a dirty `git status` on stage is a distraction.
+.scratch/
+
+# Go build output
+/provider
+/bin/
+
+# The triage tooling IS the point of this repo — keep it readable to anyone
+# who clones it. Overrides the global `.omp/` rule in ~/.config/git/ignore
+# (a repo .gitignore takes precedence over core.excludesFile).
+!.omp/
