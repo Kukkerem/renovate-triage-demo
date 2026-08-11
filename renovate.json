@@ -7,6 +7,10 @@
     "helpers:pinGitHubActionDigests"
   ],
   "ignorePresets": ["group:goOpenapi"],
+  "description": [
+    "ignorePaths overrides the :ignoreModulesAndTests preset that config:recommended pulls in. That preset ignores **/test/**, which silently excluded test/e2e/docker-compose.yaml from the docker-compose manager: the Postgres image was never scanned and never appeared on the Dependency Dashboard at all."
+  ],
+  "ignorePaths": ["**/node_modules/**", "**/vendor/**"],
   "postUpdateOptions": [
     "gomodTidy"
   ],
