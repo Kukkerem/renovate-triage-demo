@@ -64,16 +64,35 @@ for i in range(10):
            body's release notes first, then upstream changelog/releases via
            web_search or deepwiki. For digest-only bumps of the same tag,
            research is unnecessary - note "digest refresh" and move on.
-        3. Check OUR usage - Go-native evidence, not vibes:
-           a. go build ./... and go vet ./... against the bumped go.mod -
-              does it actually fail to compile?
+        3. Check OUR usage - Go-native evidence, not vibes. Every check
+           below is DIFFERENTIAL: a failure is evidence against this PR
+           only if it does NOT already happen without it. Work in a
+           scratch copy, never the live checkout:
+             cp -r . /tmp/triage-{n} && cd /tmp/triage-{n}
+           BASE = the repo as it stands. HEAD = BASE with this PR's pin
+           applied (go get <module>@<new> for go.mod bumps, otherwise
+           edit the pinned file the PR touches, then go mod tidy).
+           a. go build ./... and go vet ./... on HEAD - does it fail? If
+              it does, re-run on BASE and confirm BASE passes before
+              blaming this PR. A repo that was already broken is a
+              separate problem: say so once and move on.
            b. go mod why <module> - direct or transitive? A transitive-only
               breaking change is usually not our problem - say so
               explicitly; if transitive, go mod graph to show which direct
               dependency pulls it in.
-           c. govulncheck ./... - reachability, not mere presence. A CVE
-              the scanner flags that is never called from our code is NOT
-              a blocker - say so explicitly.
+           c. govulncheck ./... on BOTH states - reachability, and
+              differential. Collect the GO-YYYY-NNNN ids from each:
+                introduced (in HEAD, not BASE) - evidence against merging
+                fixed      (in BASE, not HEAD) - evidence FOR merging,
+                             and worth stating plainly: this PR reduces
+                             exposure, which usually argues ready-to-merge
+                baseline   (in both) - NOT evidence. Never cite a
+                             pre-existing vulnerability as a reason to
+                             hold this PR; the repo is already in that
+                             state and this PR does not change it.
+              govulncheck exits 3 only for vulns reachable from our code.
+              The trailing "modules you require, but your code doesn't
+              appear to call" section is informational, never a blocker.
            d. grep this repo for the changed symbol, flag, or env var
               across internal/, apis/, cmd/, Makefile, .github/workflows/.
               A breaking change we do not call is NOT a blocker - say so
@@ -98,7 +117,11 @@ for i in range(10):
         5. Write .scratch/renovate/pr-{n}/analysis.md: verdict on line 1 as
            "verdict: <label>", then dependency, versions, evidence bullets
            (link every claim to a changelog/release/govulncheck URL), and
-           our affected files with line references.
+           our affected files with line references. State the differential
+           result explicitly, even when it is empty - "introduced: none,
+           fixed: none, baseline: 11 (pre-existing, not this PR's)" is a
+           complete and useful line. If BASE is already red, say so once,
+           near the top, so no reader mistakes it for this PR's doing.
         """,
         agent="task",
     )
