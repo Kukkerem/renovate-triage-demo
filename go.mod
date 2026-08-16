@@ -5,7 +5,7 @@ go 1.26.5
 require (
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.21
 	github.com/golang-jwt/jwt/v4 v4.4.3
-	github.com/golang/protobuf v1.5.1
+	github.com/golang/protobuf v1.5.4
 	golang.org/x/net v0.33.0
 	golang.org/x/text v0.30.0
 )
@@ -19,6 +19,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	google.golang.org/protobuf v1.26.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
