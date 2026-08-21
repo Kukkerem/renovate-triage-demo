@@ -8,7 +8,7 @@ PROJECT_REPO := github.com/kukkerem/$(PROJECT_NAME)
 # CRDs/schema; nothing here enforces that automatically.
 export TERRAFORM_PROVIDER_SOURCE ?= SAP/btp
 export TERRAFORM_PROVIDER_REPO ?= https://github.com/SAP/terraform-provider-btp
-export TERRAFORM_PROVIDER_VERSION ?= 1.16.1
+export TERRAFORM_PROVIDER_VERSION ?= 1.26.0
 export TERRAFORM_PROVIDER_DOWNLOAD_NAME ?= terraform-provider-btp
 
 GO ?= go
