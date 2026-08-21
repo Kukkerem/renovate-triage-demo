@@ -12,7 +12,7 @@ RUN apk --no-cache add ca-certificates
 
 # Must be kept in lockstep with Makefile's TERRAFORM_PROVIDER_VERSION and the
 # generated CRDs/schema; renovate.json's customManager extracts both.
-ARG TERRAFORM_PROVIDER_VERSION=1.16.1
+ARG TERRAFORM_PROVIDER_VERSION=1.26.0
 ENV TERRAFORM_PROVIDER_VERSION=${TERRAFORM_PROVIDER_VERSION}
 
 ENV USER_ID=65532
