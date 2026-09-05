@@ -1,5 +1,5 @@
 # Multi-stage build for the demo provider binary.
-FROM golang:1.26.5-alpine AS build
+FROM golang:1.27.1-alpine@sha256:cf6fca6641884b8433441b2b0652976f975e1d0fdd26d177eaaf8596087f3125 AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
