@@ -6,8 +6,8 @@ require (
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-alpha.21
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/protobuf v1.5.1
-	golang.org/x/net v0.33.0
-	golang.org/x/text v0.30.0
+	golang.org/x/net v0.59.0
+	golang.org/x/text v0.42.0
 )
 
 require (
