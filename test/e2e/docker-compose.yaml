@@ -6,7 +6,7 @@
 # state written by an earlier test.
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15@sha256:dfbbb0ad8cab91d41e99123664e37a9b25d0413426d4fb3154e4d668e5d35246
     environment:
       POSTGRES_USER: provider
       POSTGRES_PASSWORD: provider
