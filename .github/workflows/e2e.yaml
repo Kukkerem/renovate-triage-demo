@@ -13,10 +13,10 @@ permissions:
 
 env:
   # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
-  CROSSPLANE_CHART_VERSION: '2.3.0'
-  # SHA256 of crossplane-2.3.0.tgz downloaded from charts.crossplane.io/stable
+  CROSSPLANE_CHART_VERSION: '2.5.0'
+  # SHA256 of crossplane-2.5.0.tgz downloaded from charts.crossplane.io/stable
   # Compute with: curl -sL https://charts.crossplane.io/stable/crossplane-<version>.tgz | sha256sum
-  CROSSPLANE_CHART_SHA256: '2ceff920de33e849704935219669ab976722c06f77c4ec3b6692b24f2ae6cd7f'
+  CROSSPLANE_CHART_SHA256: 'bba8762b21d33c766fb32f23a18c4af34fabeeb59e90a8e7f2a3f3c55ca1e882'
 
 jobs:
   e2e:
